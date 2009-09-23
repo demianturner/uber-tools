@@ -11,6 +11,7 @@ class Uber_Loader
      */
     private static $_autoloadPatterns = array('classes' => array() , 'dynamic' => array());
     private static $_namespaces = array();
+    private static $_namespaceExceptionHandling = array();
     private static $_namespaceRegex = '';
 
     /**
@@ -28,9 +29,10 @@ class Uber_Loader
      * @param string $namespace
      * @param string|boolean $baseDir
      */
-    public static function registerNamespace($namespace, $baseDir = true)
+    public static function registerNamespace($namespace, $baseDir = true, $throwException=true)
     {
         self::$_namespaces[$namespace] = $baseDir;
+        self::$_namespaceExceptionHandling[$namespace]=$throwException;
         self::$_namespaceRegex = '(' . implode('|', array_keys(self::$_namespaces)) . ')_.*';
     }
 
@@ -41,25 +43,25 @@ class Uber_Loader
      *
      * or
      *
-     * array('preg_replace'=>array('_'=>'/'),'suffix'=>'.php','basedir'=>'lib/'));
+     * array('preg_replace'=>array('_'=>'/'),'suffix'=>'.php','basedir'=>'lib/', 'throwException'=>true);
      *
      * or
      *
-     * array('str_replace'=>array('_'=>'/'),'suffix'=>'.php','basedir'=>'lib/'));
+     * array('str_replace'=>array('_'=>'/'),'suffix'=>'.php','basedir'=>'lib/', 'throwException'=>true);
      *
      * or
      *
-     * array('preg_match'=>'Module_(.*)','filename'=>'Module/$1.php','suffix'=>'.php','basedir'=>'lib/'));
+     * array('preg_match'=>'Module_(.*)','filename'=>'Module/$1.php','suffix'=>'.php','basedir'=>'lib/', 'throwException'=>true);
      *
      * or
      *
-     * array('classes'=>array('Component1','Component2'),'basedir'=>'Module/','filename'=>'$class','suffix'=>'.php');
+     * array('classes'=>array('Component1','Component2'),'basedir'=>'Module/','filename'=>'$class','suffix'=>'.php', 'throwException'=>true);
      *
      * @param array $pattern
      * @param integer $priority
      * @throws Uber_Loader_Exception
      */
-    public static function addAutoloadPattern(array $pattern, $priority = 1)
+    public static function addAutoloadPattern(array $pattern, $priority = 1, $throwException=true)
     {
         self::$_isOrdered = false;
         if (count($pattern) == 1 && ($key = key($pattern)) && ! is_numeric($key) && is_string($pattern[$key])) {
@@ -86,6 +88,7 @@ class Uber_Loader
                      */
                     $pattern['type'] = 'preg_match';
                     $pattern['priority'] = isset($pattern['priority']) ? $pattern['priority'] : $priority;
+                    $pattern['throwException'] = $throwException;
                     self::$_autoloadPatterns['dynamic'][] = $pattern;
                 } else {
                     if (isset($pattern['preg_replace'])) {
@@ -94,11 +97,13 @@ class Uber_Loader
                          */
                         $pattern['type'] = 'preg_replace';
                         $pattern['priority'] = isset($pattern['priority']) ? $pattern['priority'] : $priority;
+                        $pattern['throwException'] = $throwException;
                         self::$_autoloadPatterns['dynamic'][] = $pattern;
                     } else {
                         if (isset($pattern['str_replace']) && isset($pattern['replacement'])) {
                             $pattern['type'] = 'str_replace';
                             $pattern['priority'] = isset($pattern['priority']) ? $pattern['priority'] : $priority;
+                            $pattern['throwException'] = $throwException;
                             self::$_autoloadPatterns['dynamic'][] = $pattern;
                         } else {
                             if (isset($pattern['str_replace']) && is_array($pattern['str_replace']) && ! is_numeric(key($pattern['str_replace']))) {
@@ -109,6 +114,7 @@ class Uber_Loader
                                 $pattern['replacement'] = array_values($pattern['str_replace']);
                                 $pattern['str_replace'] = array_keys($pattern['str_replace']);
                                 $pattern['priority'] = isset($pattern['priority']) ? $pattern['priority'] : $priority;
+                                $pattern['throwException'] = $throwException;
                                 self::$_autoloadPatterns['dynamic'][] = $pattern;
                             } else {
                                 throw new Uber_Loader_Exception('Invalid autoload pattern: ' . var_export($pattern, true));
@@ -239,10 +245,12 @@ class Uber_Loader
         if (! self::_isValidClassName($className)) {
             throw new Uber_Loader_Exception('Class Name "' . $className . '" is invalid', - 3);
         }
+        $throwException=true;
         $found = false;
         $tryToInclude = false;
         if (! empty(self::$_namespaceRegex) && preg_match(':' . self::$_namespaceRegex . ':', $className, $matches)) {
             $baseDir = self::$_namespaces[$matches[1]];
+            $throwException=self::$_namespaceExceptionHandling[$matches[1]];
             if ($baseDir !== true) {
                 $fileName = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
                 if (is_readable($fileName)) {
@@ -285,11 +293,12 @@ class Uber_Loader
                             break;
                     }
                     if ($found === true) {
+                        $throwException=isset($pattern['throwException'])?$pattern['throwException']:true;
                         break;
                     }
                 }
             }
-        if (! class_exists($className, false) && ! interface_exists($className, false)) {
+        if (! class_exists($className, false) && ! interface_exists($className, false) && $throwException===true) {
             eval("class $className {
             function __construct() {
                 throw new Uber_Loader_Exception('Class or interface $className not found',-1);
