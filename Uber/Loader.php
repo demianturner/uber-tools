@@ -298,7 +298,7 @@ class Uber_Loader
                     }
                 }
             }
-        if (! class_exists($className, false) && ! interface_exists($className, false) && $throwException===true) {
+        if ($throwException===true && ! class_exists($className, false) && ! interface_exists($className, false)) {
             eval("class $className {
             function __construct() {
                 throw new Uber_Loader_Exception('Class or interface $className not found',-1);
