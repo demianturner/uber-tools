@@ -247,5 +247,19 @@ class Uber_Loader_Test extends PHPUnit_Framework_TestCase
             $this->assertTrue(false);
         }
     }
+    
+    public function test_class_exists_call_without_exception()
+    {
+        Uber_Loader::registerNamespace('Something',true,false);
+        $this->assertFalse(class_exists('Something_Foo',true));
+        $this->assertFalse(class_exists('Something_Foo',false));
+    }
+    
+    public function test_class_exists_call_with_exception()
+    {
+        Uber_Loader::registerNamespace('Something2',true,true);
+        $this->assertTrue(class_exists('Something2_Foo',true));
+        $this->assertTrue(class_exists('Something2_Foo',false));
+    }
 }
 
