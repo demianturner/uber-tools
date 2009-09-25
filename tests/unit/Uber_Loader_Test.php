@@ -75,16 +75,6 @@ class Uber_Loader_Test extends PHPUnit_Framework_TestCase
         }
     }
 
-    public function test_autoload_no_patterns_defined()
-    {
-        try {
-            $class = new Test_Lazy();
-            $this->assertTrue(false, 'The autoload should throw an exception when instantiating the class');
-        } catch (Uber_Loader_Exception $e) {
-            $this->assertTrue(true);
-        }
-    }
-
     public function test_invalid_class_name_in_call_user_func_array()
     {
         $className = '-Cannot-Exist';
