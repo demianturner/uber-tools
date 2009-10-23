@@ -201,6 +201,21 @@ class Uber_Loader_Test extends PHPUnit_Framework_TestCase
             $this->assertTrue(true);
         }
     }
+    
+    public function test_register_namespace_with_array()
+    {
+        $basedir1 = UBER_TEST_DIR . DS . 'fixtures' . DS . 'autoloader' . DS . 'lib' . DS;
+        $basedir2 = UBER_TEST_DIR . DS . 'fixtures' . DS . 'autoloader1' . DS . 'lib' . DS;
+        Uber_Loader::registerNamespace('Lazy',array($basedir1,$basedir2));
+        try {
+            $c1 = new Lazy_System_Dir();
+            $this->assertTrue(true);
+            $c2 = new Lazy_System_Dir1();
+            $this->assertTrue(true);
+        } catch (Exception $e) {
+            $this->assertFalse(true);
+        }
+    }
     public function test_lazy_autoload_classes()
     {
         $basedir = UBER_TEST_DIR . DS . 'fixtures' . DS . 'autoloader' . DS . 'lib' . DS . 'module' . DS;

@@ -256,9 +256,19 @@ class Uber_Loader
             $baseDir = self::$_namespaces[$matches[1]];
             $throwException = self::$_namespaceExceptionHandling[$matches[1]];
             if ($baseDir !== true) {
-                $fileName = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
-                if (is_readable($fileName)) {
-                    $tryToInclude = true;
+                if(!is_array($baseDir)) {
+                    $fileName = rtrim($baseDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
+                    if (is_readable($fileName)) {
+                        $tryToInclude = true;
+                    }
+                } else {
+                    foreach($baseDir as $bDir) {
+                        $fileName = rtrim($bDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
+                        if (is_readable($fileName)) {
+                            $tryToInclude = true;
+                            break;
+                        }
+                    }
                 }
             } else {
                 $fileName = str_replace('_', DIRECTORY_SEPARATOR, $className) . '.php';
